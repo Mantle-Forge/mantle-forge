@@ -2,6 +2,8 @@
 
 const { Command } = require('commander');
 const shell = require('shelljs');
+const { createPromptModule } = require('inquirer');
+const prompt = createPromptModule();
 const chalk = require('chalk');
 const fs = require('fs');
 
@@ -35,6 +37,47 @@ function getCurrentBranch() {
   }
   return branch;
 }
+
+// --- CLI Commands ---
+
+/**
+ * INIT - Initialize MantleForge for this repository
+ */
+program
+  .command('init')
+  .description('Initialize MantleForge deployment pipeline for this repository')
+  .action(async () => {
+    if (fs.existsSync(CONFIG_FILE)) {
+      const existingConfig = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+      console.log(chalk.yellow(`This project is already initialized.`));
+      console.log(chalk.cyan(`Current repository: ${existingConfig.repo_url}`));
+      console.log(chalk.yellow(`\nTo reinitialize with a different repository, delete ${CONFIG_FILE} first.`));
+      return;
+    }
+
+    const answers = await prompt([
+      {
+        type: 'input',
+        name: 'repo_url',
+        message: 'What is your GitHub repository URL (e.g., https://github.com/user/repo.git)?',
+        default: shell.exec('git remote get-url origin', { silent: true }).stdout.trim(),
+      }
+    ]);
+
+    if (!answers.repo_url) {
+      console.error(chalk.red('Error: Repository URL is required.'));
+      return;
+    }
+
+    const config = { repo_url: answers.repo_url };
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
+
+    console.log(chalk.green(`✅ ${CONFIG_FILE} created.`));
+    console.log('');
+    console.log(chalk.bold('📋 Next Steps:'));
+    console.log(`   ${chalk.cyan('git push origin main')}`);
+    console.log(`   Your agent will be deployed automatically!`);
+  });
 
 // --- Parse and Run ---
 program.parse(process.argv);
