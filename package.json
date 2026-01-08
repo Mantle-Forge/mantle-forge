@@ -14,6 +14,9 @@
   "author": "marshal.25ec@licet.ac.in",
   "license": "MIT",
   "dependencies": {
-    "commander": "^14.0.2"
+    "axios": "^1.13.1",
+    "chalk": "^4.1.2",
+    "commander": "^14.0.2",
+    "shelljs": "^0.10.0"
   }
 }
