@@ -1,0 +1,19 @@
+{
+  "name": "mantle-forge",
+  "version": "0.1.0",
+  "description": "CLI tool for deploying AI agents on Mantle",
+  "main": "index.js",
+  "bin": {
+    "mantle-forge": "./index.js"
+  },
+  "keywords": [
+    "git",
+    "agent",
+    "cli"
+  ],
+  "author": "marshal.25ec@licet.ac.in",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^14.0.2"
+  }
+}
