@@ -133,5 +133,45 @@ secretsCommand
     }
   });
 
+// SECRETS CHECK - Check which secrets are set
+secretsCommand
+  .command('check')
+  .description('Check which required secrets are set for the current branch')
+  .action(async () => {
+    const config = getConfig();
+    const branch_name = getCurrentBranch();
+    const branch_hash = calculateBranchHash(config.repo_url, branch_name);
+
+    try {
+      console.log(chalk.cyan(`🔍 Checking secrets for branch: ${chalk.bold(branch_name)}...`));
+      const { data } = await axios.get(`${API_BASE_URL}/api/secrets/check/${branch_hash}`);
+      
+      console.log(chalk.bold(`\n--- Secrets Status for ${branch_name} ---`));
+      
+      // Required secrets
+      console.log(chalk.bold('\n📋 Required Secrets:'));
+      data.secrets.required.forEach(secret => {
+        const status = secret.set ? chalk.green('✅ Set') : chalk.red('❌ Missing');
+        console.log(`  ${status} ${chalk.bold(secret.key)}`);
+      });
+      
+      // Overall status
+      console.log(chalk.bold('\n📊 Status:'));
+      if (data.all_required_set) {
+        console.log(chalk.green(`  ✅ All required secrets are set! Agent is ready to run.`));
+      } else {
+        console.log(chalk.red(`  ❌ Missing required secrets: ${chalk.bold(data.missing.join(', '))}`));
+      }
+      
+    } catch (err) {
+      if (err.response?.status === 404) {
+        console.error(chalk.red(`Agent not found for branch "${branch_name}"`));
+        console.log(chalk.yellow(`  → Make sure you've pushed this branch`));
+      } else {
+        console.error(chalk.red(`Error checking secrets: ${err.response?.data?.error || err.message}`));
+      }
+    }
+  });
+
 // --- Parse and Run ---
 program.parse(process.argv);
