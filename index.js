@@ -223,6 +223,18 @@ program
         console.log(chalk.yellow(`\n⚠️  No trading decisions recorded yet.`));
         return;
       }
+      
+      if (s.avg_price) {
+        console.log(`\n  Price Statistics:`);
+        console.log(`    Average: $${parseFloat(s.avg_price).toFixed(4)}`);
+        console.log(`    Min:     $${parseFloat(s.min_price).toFixed(4)}`);
+        console.log(`    Max:     $${parseFloat(s.max_price).toFixed(4)}`);
+      }
+      
+      if (s.trades_executed > 0 && totalDecisions > 0) {
+        const successRate = ((s.trades_executed / totalDecisions) * 100).toFixed(1);
+        console.log(chalk.green(`\n  Success Rate: ${successRate}%`));
+      }
     } else {
       console.log(chalk.yellow('No performance metrics available yet.'));
     }
