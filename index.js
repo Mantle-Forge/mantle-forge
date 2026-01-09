@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const { Command } = require('commander');
+const axios = require('axios');
 const shell = require('shelljs');
 const { createPromptModule } = require('inquirer');
 const prompt = createPromptModule();
@@ -84,6 +85,52 @@ program
     console.log(chalk.bold('📋 Next Steps:'));
     console.log(`   ${chalk.cyan('git push origin main')}`);
     console.log(`   Your agent will be deployed automatically!`);
+  });
+
+/**
+ * SECRETS - Manage secrets for the current branch
+ */
+const secretsCommand = program
+  .command('secrets')
+  .description('Manage secrets for the current branch');
+
+// SECRETS SET - Set a secret
+secretsCommand
+  .command('set <KEY_VALUE>')
+  .description('Set a secret for the current branch (e.g., KEY=VALUE)')
+  .action(async (keyValue) => {
+    const fullCommand = process.argv.slice(2).join(' ');
+    const match = fullCommand.match(/secrets set (.+)/);
+    
+    if (!match) {
+      console.error(chalk.red('Error: Invalid format. Use KEY=VALUE'));
+      return;
+    }
+    
+    const keyValueStr = match[1];
+    const [key, ...valueParts] = keyValueStr.split('=');
+    const value = valueParts.join('=');
+
+    if (!key || !value) {
+      console.error(chalk.red('Error: Invalid format. Use KEY=VALUE'));
+      return;
+    }
+
+    const config = getConfig();
+    const branch_name = getCurrentBranch();
+
+    try {
+      console.log(chalk.cyan(`Setting secret ${key} for branch ${branch_name}...`));
+      await axios.post(`${API_BASE_URL}/api/secrets`, {
+        repo_url: config.repo_url,
+        branch_name: branch_name,
+        key: key,
+        value: value,
+      });
+      console.log(chalk.green(`✅ Secret ${key} set.`));
+    } catch (err) {
+      console.error(chalk.red(`Error setting secret: ${err.response?.data?.error || err.message}`));
+    }
   });
 
 // --- Parse and Run ---
