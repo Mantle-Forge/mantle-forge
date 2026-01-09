@@ -38,6 +38,13 @@ function getCurrentBranch() {
   return branch;
 }
 
+// Calculate branch_hash (same as backend)
+const { ethers } = require('ethers');
+
+function calculateBranchHash(repo_url, branch_name) {
+  return ethers.id(repo_url + "/" + branch_name);
+}
+
 // --- CLI Commands ---
 
 /**
