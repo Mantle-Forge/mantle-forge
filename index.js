@@ -46,6 +46,24 @@ function calculateBranchHash(repo_url, branch_name) {
   return ethers.id(repo_url + "/" + branch_name);
 }
 
+// Helper function to fetch stats for a specific branch
+async function getStats(repo_url, branch_name) {
+  try {
+    const branch_hash = calculateBranchHash(repo_url, branch_name);
+    const url = `${API_BASE_URL}/api/stats/${branch_hash}`;
+    const { data } = await axios.get(url);
+    return { ...data, branch_name, repo_url };
+  } catch (err) {
+    const errorMsg = err.response?.data?.error || err.message;
+    if (err.response?.status === 404) {
+      console.error(chalk.red(`Agent not found for branch "${branch_name}"`));
+    } else {
+      console.error(chalk.red(`Error fetching stats for ${branch_name}: ${errorMsg}`));
+    }
+    return null;
+  }
+}
+
 // --- CLI Commands ---
 
 /**
@@ -170,6 +188,43 @@ secretsCommand
       } else {
         console.error(chalk.red(`Error checking secrets: ${err.response?.data?.error || err.message}`));
       }
+    }
+  });
+
+/**
+ * STATS - View agent performance metrics
+ */
+program
+  .command('stats')
+  .description('View real-time performance metrics for your Mantle agent')
+  .action(async () => {
+    const config = getConfig();
+    const branch_name = getCurrentBranch();
+
+    console.log(chalk.cyan(`📊 Fetching stats for ${branch_name}...`));
+    const result = await getStats(config.repo_url, branch_name);
+
+    if (!result) {
+      console.log(chalk.yellow(`\n⚠️  Could not fetch stats for "${branch_name}"`));
+      return;
+    }
+
+    if (result && result.stats) {
+      const s = result.stats;
+      const totalDecisions = s.total_decisions || 0;
+      
+      console.log(chalk.bold(`\n--- Mantle Agent Performance: ${branch_name} ---`));
+      console.log(chalk.green(`  Total Decisions:  ${totalDecisions}`));
+      console.log(chalk.cyan(`  BUY Signals:     ${s.buy_count || 0}`));
+      console.log(chalk.yellow(`  HOLD Signals:    ${s.hold_count || 0}`));
+      console.log(chalk.magenta(`  Trades Executed: ${s.trades_executed || 0}`));
+      
+      if (totalDecisions === 0) {
+        console.log(chalk.yellow(`\n⚠️  No trading decisions recorded yet.`));
+        return;
+      }
+    } else {
+      console.log(chalk.yellow('No performance metrics available yet.'));
     }
   });
 
