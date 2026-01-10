@@ -240,5 +240,31 @@ program
     }
   });
 
+/**
+ * LOGS - Stream agent logs
+ */
+program
+  .command('logs')
+  .description('Stream real-time logs from your Mantle agent process')
+  .action(async () => {
+    const config = getConfig();
+    const branch_name = getCurrentBranch();
+
+    try {
+      console.log(chalk.cyan(`Fetching logs for ${branch_name}...`));
+      const url = `${API_BASE_URL}/api/logs/${encodeURIComponent(config.repo_url)}/${encodeURIComponent(branch_name)}`;
+      const { data } = await axios.get(url);
+
+      console.log(chalk.bold(`--- Recent Agent Logs: ${branch_name} (Last 50 entries) ---`));
+      if (data.logs && data.logs.length > 0) {
+        data.logs.forEach(line => console.log(line));
+      } else {
+        console.log(chalk.yellow('No logs found.'));
+      }
+    } catch (err) {
+      console.error(chalk.red(`Error fetching logs: ${err.response?.data?.error || err.message}`));
+    }
+  });
+
 // --- Parse and Run ---
 program.parse(process.argv);
