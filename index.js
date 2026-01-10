@@ -328,14 +328,46 @@ program
     const s1 = result1.stats;
     const s2 = result2.stats;
 
-    console.log(chalk.bold('\n--- Strategy Comparison ---'));
-    console.log(`\n${branch1}:`);
-    console.log(`  Total Decisions: ${s1.total_decisions || 0}`);
-    console.log(`  Trades Executed: ${s1.trades_executed || 0}`);
+    // Helper function to strip ANSI codes for width calculation
+    const stripAnsi = (str) => str.replace(/\u001b\[[0-9;]*m/g, '');
     
-    console.log(`\n${branch2}:`);
-    console.log(`  Total Decisions: ${s2.total_decisions || 0}`);
-    console.log(`  Trades Executed: ${s2.trades_executed || 0}`);
+    // Helper function to pad string accounting for ANSI codes
+    const padWithAnsi = (str, width) => {
+      const visibleLength = stripAnsi(str).length;
+      const padding = Math.max(0, width - visibleLength);
+      return str + ' '.repeat(padding);
+    };
+
+    console.log(chalk.bold('\n╔═════════════════════╦═══════════════════════════╦════════════════════════════╗'));
+    const titleText = '  Strategy Comparison';
+    const titlePadding = 78 - titleText.length;
+    console.log(chalk.bold(`║${titleText}${' '.repeat(titlePadding)}║`));
+    console.log(chalk.bold('╠═════════════════════╬═══════════════════════════╬════════════════════════════╣'));
+    
+    // Create comparison table
+    const metrics = [
+      { label: 'Total Decisions', v1: s1.total_decisions || 0, v2: s2.total_decisions || 0 },
+      { label: 'BUY Signals', v1: s1.buy_count || 0, v2: s2.buy_count || 0 },
+      { label: 'HOLD Signals', v1: s1.hold_count || 0, v2: s2.hold_count || 0 },
+      { label: 'Trades Executed', v1: s1.trades_executed || 0, v2: s2.trades_executed || 0 },
+    ];
+
+    // Header row
+    const headerMetric = padWithAnsi('Metric', 19);
+    const header1 = padWithAnsi(chalk.bold(branch1), 27);
+    const header2 = padWithAnsi(chalk.bold(branch2), 27);
+    console.log(`║ ${headerMetric}║ ${header1}║ ${header2}║`);
+    console.log(chalk.bold('╠═════════════════════╬═══════════════════════════╬═══════════════════════════╣'));
+    
+    // Data rows
+    metrics.forEach((m) => {
+      const label = padWithAnsi(m.label, 19);
+      const v1Str = padWithAnsi(m.v1.toString(), 27);
+      const v2Str = padWithAnsi(m.v2.toString(), 27);
+      console.log(`║ ${label}║ ${v1Str}║ ${v2Str}║`);
+    });
+    
+    console.log(chalk.bold('╚═════════════════════╩═══════════════════════════╩════════════════════════════╝'));
   });
 
 // --- Parse and Run ---
