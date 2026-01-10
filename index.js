@@ -299,5 +299,44 @@ program
     }
   });
 
+/**
+ * COMPARE - Compare two branches
+ */
+program
+  .command('compare <branch1> <branch2>')
+  .description('Compare performance metrics between two agent strategies on Mantle')
+  .action(async (branch1, branch2) => {
+    const config = getConfig();
+
+    console.log(chalk.cyan(`📊 Comparing strategies: ${chalk.bold(branch1)} vs ${chalk.bold(branch2)}...`));
+
+    const [result1, result2] = await Promise.all([
+      getStats(config.repo_url, branch1),
+      getStats(config.repo_url, branch2)
+    ]);
+
+    if (!result1 || !result2) {
+      console.error(chalk.red('Could not fetch stats for comparison.'));
+      return;
+    }
+
+    if (!result1.stats || !result2.stats) {
+      console.log(chalk.yellow('\n⚠️  One or both agents have no metrics yet.'));
+      return;
+    }
+
+    const s1 = result1.stats;
+    const s2 = result2.stats;
+
+    console.log(chalk.bold('\n--- Strategy Comparison ---'));
+    console.log(`\n${branch1}:`);
+    console.log(`  Total Decisions: ${s1.total_decisions || 0}`);
+    console.log(`  Trades Executed: ${s1.trades_executed || 0}`);
+    
+    console.log(`\n${branch2}:`);
+    console.log(`  Total Decisions: ${s2.total_decisions || 0}`);
+    console.log(`  Trades Executed: ${s2.trades_executed || 0}`);
+  });
+
 // --- Parse and Run ---
 program.parse(process.argv);
