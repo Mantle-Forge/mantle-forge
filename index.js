@@ -266,5 +266,38 @@ program
     }
   });
 
+/**
+ * RESTART - Restart the agent
+ */
+program
+  .command('restart')
+  .description('Restart the Mantle agent for the current branch')
+  .action(async () => {
+    const config = getConfig();
+    const branch_name = getCurrentBranch();
+    const branch_hash = calculateBranchHash(config.repo_url, branch_name);
+
+    try {
+      console.log(chalk.cyan(`🔄 Restarting agent for branch: ${chalk.bold(branch_name)}...`));
+      const url = `${API_BASE_URL}/api/agents/branch/${branch_hash}/restart`;
+      const { data } = await axios.post(url);
+
+      if (data.success) {
+        console.log(chalk.green(`✅ Agent restarted successfully!`));
+        console.log(chalk.gray(`   Branch: ${data.agent?.branch_name || branch_name}`));
+        console.log(chalk.cyan(`\n💡 The agent will reload with the latest code and secrets.`));
+      } else {
+        console.log(chalk.yellow(`⚠️  Restart response: ${JSON.stringify(data)}`));
+      }
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || err.message;
+      if (err.response?.status === 404) {
+        console.error(chalk.red(`Agent not found for branch "${branch_name}"`));
+      } else {
+        console.error(chalk.red(`Error restarting agent: ${errorMsg}`));
+      }
+    }
+  });
+
 // --- Parse and Run ---
 program.parse(process.argv);
