@@ -368,6 +368,26 @@ program
     });
     
     console.log(chalk.bold('╚═════════════════════╩═══════════════════════════╩════════════════════════════╝'));
+
+    // Determine winner
+    console.log('\n' + chalk.bold('🏆 Performance Analysis:'));
+    if ((s1.trades_executed || 0) > (s2.trades_executed || 0)) {
+      console.log(chalk.green(`  ${branch1} has executed more trades`));
+    } else if ((s2.trades_executed || 0) > (s1.trades_executed || 0)) {
+      console.log(chalk.green(`  ${branch2} has executed more trades`));
+    } else {
+      console.log(chalk.yellow(`  Both strategies show similar trade execution patterns`));
+    }
+
+    if (s1.total_decisions && s2.total_decisions) {
+      const rate1 = (s1.trades_executed / s1.total_decisions) * 100;
+      const rate2 = (s2.trades_executed / s2.total_decisions) * 100;
+      if (rate1 > rate2) {
+        console.log(chalk.green(`  ${branch1} has better success rate (${rate1.toFixed(1)}% vs ${rate2.toFixed(1)}%)`));
+      } else if (rate2 > rate1) {
+        console.log(chalk.green(`  ${branch2} has better success rate (${rate2.toFixed(1)}% vs ${rate1.toFixed(1)}%)`));
+      }
+    }
   });
 
 // --- Parse and Run ---
