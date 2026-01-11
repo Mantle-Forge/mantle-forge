@@ -1,18 +1,34 @@
 {
   "name": "mantle-forge",
   "version": "0.1.0",
-  "description": "CLI tool for deploying AI agents on Mantle",
+  "description": "CLI tool for deploying and managing AI agents on Mantle Sepolia via Git workflows",
   "main": "index.js",
+  "readme": "README.md",
   "bin": {
     "mantle-forge": "./index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Mantle-Forge/mantle-forge.git",
+    "directory": "root"
   },
   "keywords": [
     "git",
     "agent",
-    "cli"
+    "cli",
+    "ai",
+    "trading",
+    "blockchain",
+    "mantle",
+    "web3",
+    "defi",
+    "autonomous-agents"
   ],
   "author": "marshal.25ec@licet.ac.in",
   "license": "MIT",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "dependencies": {
     "axios": "^1.13.1",
     "chalk": "^4.1.2",
@@ -20,5 +36,8 @@
     "ethers": "^6.15.0",
     "inquirer": "^12.10.0",
     "shelljs": "^0.10.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }
