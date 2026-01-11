@@ -101,8 +101,39 @@ program
     console.log(chalk.green(`✅ ${CONFIG_FILE} created.`));
     console.log('');
     console.log(chalk.bold('📋 Next Steps:'));
+    console.log('');
+    
+    const repoUrl = answers.repo_url;
+    const oauthUrl = `https://mantle-git-agent.onrender.com/auth/github?repo_url=${encodeURIComponent(repoUrl)}`;
+    
+    console.log(chalk.cyan('🚀 Option A: Automatic Webhook Configuration (Recommended)'));
+    console.log(`   Visit: ${chalk.underline(oauthUrl)}`);
+    console.log(`   Authorize GitHub to automatically set up deployment webhooks`);
+    console.log('');
+    
+    console.log(chalk.yellow('⚙️  Option B: Manual Webhook Configuration'));
+    console.log(`   Navigate to: GitHub → ${answers.repo_url.split('/').slice(-2).join('/')} → Settings → Webhooks`);
+    console.log(`   Webhook URL: ${chalk.cyan('https://mantle-git-agent.onrender.com/webhook/github/push')}`);
+    console.log(`   Content type: ${chalk.cyan('application/json')}`);
+    console.log(`   Events: ${chalk.cyan('Just the push event')}`);
+    console.log('');
+    
+    console.log(chalk.bold('🔐 Configure Agent Secrets:'));
+    console.log(`   ${chalk.cyan('mantle-forge secrets set GROQ_API_KEY=your-key-here')}`);
+    console.log(`   ${chalk.cyan('mantle-forge secrets set AGENT_PRIVATE_KEY=0x...')}`);
+    console.log(`   These secrets are encrypted and securely stored for each branch`);
+    console.log('');
+    
+    console.log(chalk.bold('🚀 Deploy to Mantle Sepolia:'));
     console.log(`   ${chalk.cyan('git push origin main')}`);
-    console.log(`   Your agent will be deployed automatically!`);
+    console.log(`   Each push automatically deploys a new smart contract on Mantle Sepolia testnet`);
+    console.log(`   Your agent will be live on-chain within 30 seconds!`);
+    console.log('');
+    
+    console.log(chalk.bold('📊 Monitor Your Agents:'));
+    console.log(`   ${chalk.cyan('mantle-forge stats')} - View real-time performance metrics`);
+    console.log(`   ${chalk.cyan('mantle-forge logs')} - Stream live agent decision logs`);
+    console.log(`   Web Dashboard: ${chalk.underline('https://mantle-git-agent.onrender.com/dashboard')}`);
   });
 
 /**
