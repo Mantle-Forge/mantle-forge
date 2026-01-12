@@ -87,11 +87,92 @@ program
   .command('init')
   .description('Initialize MantleForge deployment pipeline for this repository')
   .action(async () => {
-    if (fs.existsSync(CONFIG_FILE)) {
+    // Check for both old and new config file names
+    const oldConfigFile = '.gitagent.json';
+    const hasOldConfig = fs.existsSync(oldConfigFile);
+    const hasNewConfig = fs.existsSync(CONFIG_FILE);
+    
+    if (hasNewConfig) {
       const existingConfig = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
       console.log(chalk.yellow(`This project is already initialized.`));
       console.log(chalk.cyan(`Current repository: ${existingConfig.repo_url}`));
       console.log(chalk.yellow(`\nTo reinitialize with a different repository, delete ${CONFIG_FILE} first.`));
+      return;
+    }
+    
+    // Migrate from old config file if it exists, but still prompt to confirm/change
+    if (hasOldConfig) {
+      const oldConfig = JSON.parse(fs.readFileSync(oldConfigFile, 'utf8'));
+      console.log(chalk.yellow(`Found old config file (${oldConfigFile}).`));
+      console.log(chalk.cyan(`Current repository: ${oldConfig.repo_url}`));
+      console.log(chalk.yellow(`\nDo you want to keep this repository or change it?`));
+      
+      const answers = await prompt([
+        {
+          type: 'input',
+          name: 'repo_url',
+          message: 'What is your GitHub repository URL (e.g., https://github.com/user/repo.git)?',
+          default: oldConfig.repo_url || shell.exec('git remote get-url origin', { silent: true }).stdout.trim(),
+        }
+      ]);
+
+      if (!answers.repo_url) {
+        console.error(chalk.red('Error: Repository URL is required.'));
+        return;
+      }
+
+      const config = { repo_url: answers.repo_url };
+      fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
+      
+      // Remove old config file after successful migration
+      if (fs.existsSync(oldConfigFile)) {
+        fs.unlinkSync(oldConfigFile);
+      }
+      
+      console.log(chalk.green(`✅ ${CONFIG_FILE} created.`));
+      if (answers.repo_url !== oldConfig.repo_url) {
+        console.log(chalk.green(`✅ Repository URL updated from old config.`));
+      } else {
+        console.log(chalk.green(`✅ Migrated from ${oldConfigFile} to ${CONFIG_FILE}`));
+      }
+      
+      // Continue with next steps (same as new initialization)
+      console.log('');
+      console.log(chalk.bold('📋 Next Steps:'));
+      console.log('');
+      
+      const repoUrl = answers.repo_url;
+      const oauthUrl = `https://mantle-git-agent.onrender.com/auth/github?repo_url=${encodeURIComponent(repoUrl)}`;
+      
+      console.log(chalk.cyan('🚀 Option A: Automatic Webhook Configuration (Recommended)'));
+      console.log(`   Visit: ${chalk.underline(oauthUrl)}`);
+      console.log(`   Authorize GitHub to automatically set up deployment webhooks`);
+      console.log('');
+      
+      console.log(chalk.yellow('⚙️  Option B: Manual Webhook Configuration'));
+      console.log(`   Navigate to: GitHub → ${answers.repo_url.split('/').slice(-2).join('/')} → Settings → Webhooks`);
+      console.log(`   Webhook URL: ${chalk.cyan('https://mantle-git-agent.onrender.com/webhook/github/push')}`);
+      console.log(`   Content type: ${chalk.cyan('application/json')}`);
+      console.log(`   Events: ${chalk.cyan('Just the push event')}`);
+      console.log('');
+      
+      console.log(chalk.bold('🔐 Configure Agent Secrets:'));
+      console.log(`   ${chalk.cyan('mantle-forge secrets set GROQ_API_KEY=your-key-here')}`);
+      console.log(`   ${chalk.cyan('mantle-forge secrets set AGENT_PRIVATE_KEY=0x...')}`);
+      console.log(`   These secrets are encrypted and securely stored for each branch`);
+      console.log('');
+      
+      console.log(chalk.bold('🚀 Deploy to Mantle Sepolia:'));
+      console.log(`   ${chalk.cyan('git push origin main')}`);
+      console.log(`   Each push automatically deploys a new smart contract on Mantle Sepolia testnet`);
+      console.log(`   Your agent will be live on-chain within 30 seconds!`);
+      console.log('');
+      
+      console.log(chalk.bold('📊 Monitor Your Agents:'));
+      console.log(`   ${chalk.cyan('mantle-forge stats')} - View real-time performance metrics`);
+      console.log(`   ${chalk.cyan('mantle-forge logs')} - Stream live agent decision logs`);
+      console.log(`   Web Dashboard: ${chalk.underline('https://mantle-git-agent.onrender.com/dashboard')}`);
+      
       return;
     }
 
