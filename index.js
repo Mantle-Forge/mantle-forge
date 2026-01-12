@@ -18,12 +18,24 @@ const CONFIG_FILE = '.mantlepush.json';
 
 // --- Helper Functions ---
 
-// Reads the .mantlepush.json file
+// Reads the .mantlepush.json file (or migrates from .gitagent.json)
 function getConfig() {
+  // Check for new config file first
   if (fs.existsSync(CONFIG_FILE)) {
     return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
   }
   
+  // Check for old config file and migrate
+  const oldConfigFile = '.gitagent.json';
+  if (fs.existsSync(oldConfigFile)) {
+    console.log(chalk.yellow(`Migrating from ${oldConfigFile} to ${CONFIG_FILE}...`));
+    const oldConfig = JSON.parse(fs.readFileSync(oldConfigFile, 'utf8'));
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify(oldConfig, null, 2));
+    console.log(chalk.green(`✅ Migrated to ${CONFIG_FILE}`));
+    return oldConfig;
+  }
+  
+  // No config file found
   console.error(chalk.red(`Error: This repository is not configured for MantleForge. Missing ${CONFIG_FILE}.`));
   console.log(chalk.yellow('Run `mantle-forge init` to initialize MantleForge in this repository.'));
   process.exit(1);
