@@ -69,6 +69,8 @@ async function getStats(repo_url, branch_name) {
     const errorMsg = err.response?.data?.error || err.message;
     if (err.response?.status === 404) {
       console.error(chalk.red(`Agent not found for branch "${branch_name}"`));
+      console.log(chalk.yellow(`  → Make sure you've pushed this branch: ${chalk.cyan(`git push origin ${branch_name}`)}`));
+      console.log(chalk.yellow(`  → The backend webhook will deploy it automatically`));
     } else {
       console.error(chalk.red(`Error fetching stats for ${branch_name}: ${errorMsg}`));
     }
