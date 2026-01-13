@@ -299,6 +299,15 @@ secretsCommand
         console.log(`  ${status} ${chalk.bold(secret.key)}`);
       });
       
+      // Optional secrets
+      if (data.secrets.optional.length > 0) {
+        console.log(chalk.bold('\n⚙️  Optional Secrets:'));
+        data.secrets.optional.forEach(secret => {
+          const status = secret.set ? chalk.cyan('✓ Set') : chalk.gray('○ Not set');
+          console.log(`  ${status} ${secret.key}`);
+        });
+      }
+      
       // Overall status
       console.log(chalk.bold('\n📊 Status:'));
       if (data.all_required_set) {
