@@ -10,7 +10,7 @@ const fs = require('fs');
 
 const program = new Command();
 program.name('mantle-forge');
-program.version('0.1.0');
+program.version('1.0.0');
 
 // --- Configuration ---
 const API_BASE_URL = 'https://mantle-git-agent.onrender.com';

@@ -1,6 +1,6 @@
 {
   "name": "mantle-forge",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "CLI tool for deploying and managing AI agents on Mantle Sepolia via Git workflows",
   "main": "index.js",
   "readme": "README.md",
