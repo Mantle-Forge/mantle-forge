@@ -314,6 +314,10 @@ secretsCommand
         console.log(chalk.green(`  ✅ All required secrets are set! Agent is ready to run.`));
       } else {
         console.log(chalk.red(`  ❌ Missing required secrets: ${chalk.bold(data.missing.join(', '))}`));
+        console.log(chalk.yellow(`\n💡 Set missing secrets with:`));
+        data.missing.forEach(key => {
+          console.log(chalk.cyan(`     mantle-forge secrets set ${key}=<your-value>`));
+        });
       }
       
     } catch (err) {
@@ -355,8 +359,16 @@ program
       console.log(chalk.magenta(`  Trades Executed: ${s.trades_executed || 0}`));
       
       if (totalDecisions === 0) {
-        console.log(chalk.yellow(`\n⚠️  No trading decisions recorded yet.`));
+      console.log(chalk.yellow(`\n⚠️  No trading decisions recorded yet.`));
+      console.log(chalk.yellow(`   → Check agent status: ${chalk.cyan('mantle-forge logs')}`));
+      console.log(chalk.yellow(`   → Verify the agent process is running on MantleForge backend`));
         return;
+      }
+      
+      if (s.first_decision && s.last_decision) {
+        console.log(`\n  Activity:`);
+        console.log(`    First Decision: ${s.first_decision}`);
+        console.log(`    Last Decision:  ${s.last_decision}`);
       }
       
       if (s.avg_price) {
@@ -428,6 +440,8 @@ program
       const errorMsg = err.response?.data?.error || err.message;
       if (err.response?.status === 404) {
         console.error(chalk.red(`Agent not found for branch "${branch_name}"`));
+        console.log(chalk.yellow(`  → Make sure you've pushed this branch: ${chalk.cyan(`git push origin ${branch_name}`)}`));
+        console.log(chalk.yellow(`  → The backend webhook will deploy it automatically`));
       } else {
         console.error(chalk.red(`Error restarting agent: ${errorMsg}`));
       }
@@ -452,11 +466,21 @@ program
 
     if (!result1 || !result2) {
       console.error(chalk.red('Could not fetch stats for comparison.'));
+      if (!result1) {
+        console.log(chalk.yellow(`  ${branch1}: Agent not found or error occurred`));
+        console.log(chalk.yellow(`    → Make sure you've pushed: ${chalk.cyan(`git push origin ${branch1}`)}`));
+      }
+      if (!result2) {
+        console.log(chalk.yellow(`  ${branch2}: Agent not found or error occurred`));
+        console.log(chalk.yellow(`    → Make sure you've pushed: ${chalk.cyan(`git push origin ${branch2}`)}`));
+      }
       return;
     }
 
     if (!result1.stats || !result2.stats) {
       console.log(chalk.yellow('\n⚠️  One or both agents have no metrics yet.'));
+      if (!result1.stats) console.log(chalk.yellow(`  ${branch1}: Waiting for first decision...`));
+      if (!result2.stats) console.log(chalk.yellow(`  ${branch2}: Waiting for first decision...`));
       return;
     }
 
