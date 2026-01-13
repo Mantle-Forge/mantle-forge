@@ -505,10 +505,16 @@ program
     
     // Create comparison table
     const metrics = [
-      { label: 'Total Decisions', v1: s1.total_decisions || 0, v2: s2.total_decisions || 0 },
-      { label: 'BUY Signals', v1: s1.buy_count || 0, v2: s2.buy_count || 0 },
-      { label: 'HOLD Signals', v1: s1.hold_count || 0, v2: s2.hold_count || 0 },
-      { label: 'Trades Executed', v1: s1.trades_executed || 0, v2: s2.trades_executed || 0 },
+      { label: 'Total Decisions', v1: s1.total_decisions || 0, v2: s2.total_decisions || 0, format: (v) => v.toString() },
+      { label: 'BUY Signals', v1: s1.buy_count || 0, v2: s2.buy_count || 0, format: (v) => chalk.cyan(v.toString()) },
+      { label: 'HOLD Signals', v1: s1.hold_count || 0, v2: s2.hold_count || 0, format: (v) => chalk.yellow(v.toString()) },
+      { label: 'Trades Executed', v1: s1.trades_executed || 0, v2: s2.trades_executed || 0, format: (v) => chalk.magenta(v.toString()) },
+      { label: 'Avg Price', v1: s1.avg_price || 0, v2: s2.avg_price || 0, format: (v) => `$${parseFloat(v).toFixed(4)}` },
+      { label: 'Success Rate', 
+        v1: s1.total_decisions ? ((s1.trades_executed / s1.total_decisions) * 100).toFixed(1) : '0.0', 
+        v2: s2.total_decisions ? ((s2.trades_executed / s2.total_decisions) * 100).toFixed(1) : '0.0',
+        format: (v) => chalk.green(`${v}%`)
+      },
     ];
 
     // Header row
@@ -519,10 +525,10 @@ program
     console.log(chalk.bold('╠═════════════════════╬═══════════════════════════╬═══════════════════════════╣'));
     
     // Data rows
-    metrics.forEach((m) => {
+    metrics.forEach((m, idx) => {
       const label = padWithAnsi(m.label, 19);
-      const v1Str = padWithAnsi(m.v1.toString(), 27);
-      const v2Str = padWithAnsi(m.v2.toString(), 27);
+      const v1Str = padWithAnsi(m.format(m.v1), 27);
+      const v2Str = padWithAnsi(m.format(m.v2), 27);
       console.log(`║ ${label}║ ${v1Str}║ ${v2Str}║`);
     });
     
