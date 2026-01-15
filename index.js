@@ -7,13 +7,17 @@ const { createPromptModule } = require('inquirer');
 const prompt = createPromptModule();
 const chalk = require('chalk');
 const fs = require('fs');
+const path = require('path');
 
 const program = new Command();
 program.name('mantle-forge');
 program.version('1.0.0');
 
 // --- Configuration ---
-const API_BASE_URL = 'https://mantle-git-agent.onrender.com';
+// MantleForge backend API endpoint
+// For local development, use http://localhost:3005
+// For production deployments, use your deployed backend URL
+const API_BASE_URL = 'https://mantle-git-agent.onrender.com'; // Production MantleForge backend
 const CONFIG_FILE = '.mantlepush.json';
 
 // --- Helper Functions ---
@@ -38,7 +42,9 @@ function getConfig() {
   // No config file found
   console.error(chalk.red(`Error: This repository is not configured for MantleForge. Missing ${CONFIG_FILE}.`));
   console.log(chalk.yellow('Run `mantle-forge init` to initialize MantleForge in this repository.'));
-  process.exit(1);
+    process.exit(1);
+  const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+  return config;
 }
 
 // Gets the current git branch
@@ -81,7 +87,8 @@ async function getStats(repo_url, branch_name) {
 // --- CLI Commands ---
 
 /**
- * INIT - Initialize MantleForge for this repository
+ * 1. INIT
+ * Initializes the project by creating .mantlepush.json
  */
 program
   .command('init')
@@ -198,6 +205,7 @@ program
     console.log(chalk.bold('📋 Next Steps:'));
     console.log('');
     
+    // Show OAuth URL for automatic setup
     const repoUrl = answers.repo_url;
     const oauthUrl = `https://mantle-git-agent.onrender.com/auth/github?repo_url=${encodeURIComponent(repoUrl)}`;
     
@@ -232,7 +240,7 @@ program
   });
 
 /**
- * SECRETS - Manage secrets for the current branch
+ * 2. SECRETS - Create a command group for secrets
  */
 const secretsCommand = program
   .command('secrets')
@@ -243,6 +251,7 @@ secretsCommand
   .command('set <KEY_VALUE>')
   .description('Set a secret for the current branch (e.g., KEY=VALUE)')
   .action(async (keyValue) => {
+    // Handle the case where commander might parse this incorrectly
     const fullCommand = process.argv.slice(2).join(' ');
     const match = fullCommand.match(/secrets set (.+)/);
     
@@ -323,7 +332,7 @@ secretsCommand
     } catch (err) {
       if (err.response?.status === 404) {
         console.error(chalk.red(`Agent not found for branch "${branch_name}"`));
-        console.log(chalk.yellow(`  → Make sure you've pushed this branch`));
+        console.log(chalk.yellow(`  → Make sure you've pushed this branch: ${chalk.cyan(`git push origin ${branch_name}`)}`));
       } else {
         console.error(chalk.red(`Error checking secrets: ${err.response?.data?.error || err.message}`));
       }
@@ -331,7 +340,8 @@ secretsCommand
   });
 
 /**
- * STATS - View agent performance metrics
+ * 4. STATS
+ * Gets stats for the current branch
  */
 program
   .command('stats')
@@ -345,6 +355,7 @@ program
 
     if (!result) {
       console.log(chalk.yellow(`\n⚠️  Could not fetch stats for "${branch_name}"`));
+      console.log(chalk.yellow(`   The agent may not be deployed yet, or there was an error.`));
       return;
     }
 
@@ -365,12 +376,6 @@ program
         return;
       }
       
-      if (s.first_decision && s.last_decision) {
-        console.log(`\n  Activity:`);
-        console.log(`    First Decision: ${s.first_decision}`);
-        console.log(`    Last Decision:  ${s.last_decision}`);
-      }
-      
       if (s.avg_price) {
         console.log(`\n  Price Statistics:`);
         console.log(`    Average: $${parseFloat(s.avg_price).toFixed(4)}`);
@@ -378,17 +383,24 @@ program
         console.log(`    Max:     $${parseFloat(s.max_price).toFixed(4)}`);
       }
       
+      if (s.first_decision && s.last_decision) {
+        console.log(`\n  Activity:`);
+        console.log(`    First Decision: ${s.first_decision}`);
+        console.log(`    Last Decision:  ${s.last_decision}`);
+      }
+      
       if (s.trades_executed > 0 && totalDecisions > 0) {
         const successRate = ((s.trades_executed / totalDecisions) * 100).toFixed(1);
         console.log(chalk.green(`\n  Success Rate: ${successRate}%`));
       }
     } else {
-      console.log(chalk.yellow('No performance metrics available yet.'));
+      console.log(chalk.yellow('No performance metrics available yet. The agent needs to make trading decisions first.'));
     }
   });
 
 /**
- * LOGS - Stream agent logs
+ * 5. LOGS
+ * Gets logs for the current branch
  */
 program
   .command('logs')
@@ -414,7 +426,8 @@ program
   });
 
 /**
- * RESTART - Restart the agent
+ * 6. RESTART
+ * Restarts the agent for the current branch
  */
 program
   .command('restart')
@@ -432,6 +445,7 @@ program
       if (data.success) {
         console.log(chalk.green(`✅ Agent restarted successfully!`));
         console.log(chalk.gray(`   Branch: ${data.agent?.branch_name || branch_name}`));
+        console.log(chalk.gray(`   Repository: ${data.agent?.repo_url || config.repo_url}`));
         console.log(chalk.cyan(`\n💡 The agent will reload with the latest code and secrets.`));
       } else {
         console.log(chalk.yellow(`⚠️  Restart response: ${JSON.stringify(data)}`));
@@ -449,7 +463,8 @@ program
   });
 
 /**
- * COMPARE - Compare two branches
+ * 7. COMPARE
+ * Compares two branches side-by-side
  */
 program
   .command('compare <branch1> <branch2>')
@@ -457,7 +472,7 @@ program
   .action(async (branch1, branch2) => {
     const config = getConfig();
 
-    console.log(chalk.cyan(`📊 Comparing strategies: ${chalk.bold(branch1)} vs ${chalk.bold(branch2)}...`));
+    console.log(chalk.cyan(`📊 Comparing Mantle agent strategies: ${chalk.bold(branch1)} vs ${chalk.bold(branch2)}...`));
 
     const [result1, result2] = await Promise.all([
       getStats(config.repo_url, branch1),
@@ -498,8 +513,8 @@ program
     };
 
     console.log(chalk.bold('\n╔═════════════════════╦═══════════════════════════╦════════════════════════════╗'));
-    const titleText = '  Strategy Comparison';
-    const titlePadding = 78 - titleText.length;
+    const titleText = '  Mantle Agent Strategy Comparison';
+    const titlePadding = 78 - titleText.length; // 77 total width minus title and borders
     console.log(chalk.bold(`║${titleText}${' '.repeat(titlePadding)}║`));
     console.log(chalk.bold('╠═════════════════════╬═══════════════════════════╬════════════════════════════╣'));
     
